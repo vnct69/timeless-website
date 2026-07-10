@@ -1,20 +1,15 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function DashboardScanPage() {
-	const [scanning, setScanning] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
 		null,
 	);
-	const router = useRouter();
-	const supabase = createClient();
 
 	useEffect(() => {
 		// Get user's location

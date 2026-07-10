@@ -34,3 +34,25 @@ export function calculateDistance(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
   return R * c // Distance in kilometers
 }
+
+/**
+ * Debounce function to limit how often a function is called
+ */
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null
+
+  return function (this: any, ...args: Parameters<T>) {
+    const later = () => {
+      timeout = null
+      func.apply(this, args)
+    }
+
+    if (timeout) {
+      clearTimeout(timeout)
+    }
+    timeout = setTimeout(later, wait)
+  }
+}
