@@ -61,12 +61,11 @@
 
 
 
-
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import ScanHandler from "./ScanHandler";
 
-// ✅ Add this to prevent static generation
+// ✅ This prevents static generation
 export const dynamic = 'force-dynamic';
 
 interface ScanPageProps {
