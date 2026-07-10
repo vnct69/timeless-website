@@ -1,8 +1,0 @@
-{
-	"env": {
-		"NEXT_PUBLIC_SUPABASE_URL": "https://rcmajccnjqbuhineyitq.supabase.co",
-		"NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbWFqY2NuanFidWhpbmV5aXRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NTc5NjQsImV4cCI6MjA5ODMzMzk2NH0.1W-tmNkaM8aEHDBSFcgxq7U_ZC8wfNKtN5KcGL3Skqs",
-		"SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbWFqY2NuanFidWhpbmV5aXRxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mjc1Nzk2NCwiZXhwIjoyMDk4MzMzOTY0fQ.nUfZE0Y_Wv29-gXj0XeEQQM7JuVBcykiA87tIaKc52E",
-		"NEXT_PUBLIC_APP_URL": "https://timeless-website-hyirxqcvx-vincents-projects-b89296ea.vercel.app"
-	}
-}
