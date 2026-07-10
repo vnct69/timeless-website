@@ -66,7 +66,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import ScanHandler from "./ScanHandler";
 
-// ✅ This tells Next.js not to statically generate this page
+// ✅ Add this to prevent static generation
 export const dynamic = 'force-dynamic';
 
 interface ScanPageProps {
