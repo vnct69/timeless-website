@@ -122,3 +122,30 @@ export async function getSession() {
   const { data: { session } } = await supabase.auth.getSession()
   return session
 }
+
+/**
+ * Force refresh user role (useful after role changes)
+ */
+export async function refreshUserRole(): Promise<{ role: string | null }> {
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return { role: null }
+  }
+  
+  // Force fetch the latest profile data
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  
+  if (error) {
+    console.error('Error fetching role:', error)
+    return { role: null }
+  }
+  
+  return { role: profile?.role || 'member' }
+}
