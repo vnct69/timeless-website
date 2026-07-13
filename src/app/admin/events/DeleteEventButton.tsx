@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState } from 'react'
@@ -11,6 +12,7 @@ interface DeleteEventButtonProps {
 
 export default function DeleteEventButton({ eventId, eventTitle }: DeleteEventButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -20,39 +22,70 @@ export default function DeleteEventButton({ eventId, eventTitle }: DeleteEventBu
     }
 
     setIsDeleting(true)
+    setError(null)
 
     try {
-      const { error } = await supabase
+      // First, check if there are any attendance records
+      const { count, error: countError } = await supabase
+        .from('attendance_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+
+      if (countError) {
+        console.error('Error checking attendance:', countError)
+      }
+
+      // If there are attendance records, ask for confirmation
+      if (count && count > 0) {
+        const confirmDelete = confirm(
+          `This event has ${count} attendance record(s). Deleting it will also remove all associated attendance records. Continue?`
+        )
+        if (!confirmDelete) {
+          setIsDeleting(false)
+          return
+        }
+      }
+
+      // Delete the event (cascade will delete attendance records)
+      const { error: deleteError } = await supabase
         .from('events')
         .delete()
         .eq('id', eventId)
 
-      if (error) throw error
+      if (deleteError) {
+        console.error('Delete error:', deleteError)
+        setError(deleteError.message)
+        setIsDeleting(false)
+        return
+      }
 
-      // ✅ Refresh the page to show updated list
+      // Success - refresh the page
       router.refresh()
       
-      // ✅ Also force a hard refresh of the data
-      // (router.refresh() should be enough, but this is a fallback)
+      // Force a hard refresh after a moment to ensure data is updated
       setTimeout(() => {
         window.location.reload()
-      }, 500)
+      }, 300)
       
-    } catch (error) {
-      console.error('Error deleting event:', error)
-      alert('Failed to delete event. Please try again.')
-    } finally {
+    } catch (err: any) {
+      console.error('Error deleting event:', err)
+      setError(err.message || 'Failed to delete event. Please try again.')
       setIsDeleting(false)
     }
   }
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={isDeleting}
-      className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-    >
-      {isDeleting ? 'Deleting...' : 'Delete'}
-    </button>
+    <>
+      {error && (
+        <div className="text-xs text-red-600 mb-1">{error}</div>
+      )}
+      <button
+        onClick={handleDelete}
+        disabled={isDeleting}
+        className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {isDeleting ? 'Deleting...' : 'Delete'}
+      </button>
+    </>
   )
 }
