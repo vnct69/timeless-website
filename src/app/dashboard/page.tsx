@@ -1,17 +1,29 @@
-import { getCurrentUser, getUserRole } from '@/lib/auth/actions'
+import { getCurrentUser } from '@/lib/auth/actions'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
-// ✅ Add this to prevent static generation
-export const dynamic = 'force-dynamic';
+// ✅ Force dynamic rendering and no caching
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
-  const role = await getUserRole()
   
   if (!user) {
     redirect('/login')
   }
+
+  // ✅ Fetch role directly (bypassing cached getUserRole)
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  
+  const role = profile?.role || 'member'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -22,10 +34,14 @@ export default async function DashboardPage() {
               Welcome, {user.email}!
             </h1>
             <p className="text-gray-600">
-              Role: <span className="font-semibold capitalize">{role || 'member'}</span>
+              Role: <span className={`font-semibold capitalize ${role === 'admin' ? 'text-blue-600' : ''}`}>{role}</span>
             </p>
+            {role === 'admin' && (
+              <p className="text-sm text-blue-600 mt-1">✅ You have admin privileges</p>
+            )}
           </div>
 
+          {/* Rest of your dashboard */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -86,4 +102,3 @@ export default async function DashboardPage() {
     </div>
   )
 }
-

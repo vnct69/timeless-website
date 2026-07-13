@@ -1,8 +1,11 @@
-import { requireAdmin } from '@/lib/auth/guards'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/guards'
 import AdminPageClient from './AdminPageClient'
 
+// ✅ Force dynamic rendering and no caching
 export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
 
 export default async function AdminPage() {
   await requireAdmin()
@@ -23,7 +26,7 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
-  // Get user role
+  // ✅ Get fresh user role
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase
     .from('profiles')
@@ -31,12 +34,14 @@ export default async function AdminPage() {
     .eq('id', user?.id)
     .single()
 
+  const role = profile?.role || 'member'
+
   return (
     <AdminPageClient 
       totalEvents={totalEvents || 0}
       totalAttendance={totalAttendance || 0}
       recentEvents={recentEvents || []}
-      role={profile?.role || 'member'}
+      role={role}
     />
   )
 }

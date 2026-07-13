@@ -4,7 +4,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import CreateEventModal from '@/components/CreateEventModal'
-import { formatPhilippineTime } from '@/lib/date-utils'
 
 interface AdminPageClientProps {
   totalEvents: number
@@ -50,7 +49,6 @@ export default function AdminPageClient({
         onSuccess={() => {
           setMessage({ text: '✅ Event created successfully!', type: 'success' })
           setTimeout(() => setMessage(null), 3000)
-          // Refresh the page to show new event
           window.location.reload()
         }}
       />
@@ -58,7 +56,7 @@ export default function AdminPageClient({
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-6xl mx-auto">
-            {/* Header */}
+            {/* Header - Updated to show role */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <h1 className="text-2xl font-bold text-gray-900">
                 Admin Dashboard
@@ -66,6 +64,14 @@ export default function AdminPageClient({
               <p className="text-gray-600">
                 Manage events, generate QR codes, and monitor attendance
               </p>
+              {role && (
+                <p className="text-sm text-gray-500 mt-1">
+                  👤 Logged in as: <span className="font-medium text-gray-700 capitalize">{role}</span>
+                  {role === 'admin' && (
+                    <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Verified</span>
+                  )}
+                </p>
+              )}
             </div>
 
             {/* Stats Cards */}
@@ -86,9 +92,8 @@ export default function AdminPageClient({
               </div>
             </div>
 
-            {/* Admin Actions - Updated with 3 cards */}
+            {/* Admin Actions */}
             <div className="grid md:grid-cols-3 gap-6 mb-6">
-              {/* ✅ Create Event - Now uses modal */}
               <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer">
                 <button
                   onClick={() => setShowCreateModal(true)}

@@ -88,8 +88,27 @@ export async function getCurrentUser() {
   return user
 }
 
+// /**
+//  * Get user role from profiles table
+//  */
+// export async function getUserRole(): Promise<string | null> {
+//   const supabase = await createClient()
+//   const { data: { user } } = await supabase.auth.getUser()
+  
+//   if (!user) return null
+  
+//   const { data: profile } = await supabase
+//     .from('profiles')
+//     .select('role')
+//     .eq('id', user.id)
+//     .single()
+  
+//   return profile?.role || null
+// }
+
+
 /**
- * Get user role from profiles table
+ * Get user role from profiles table - Force fresh fetch
  */
 export async function getUserRole(): Promise<string | null> {
   const supabase = await createClient()
@@ -97,13 +116,19 @@ export async function getUserRole(): Promise<string | null> {
   
   if (!user) return null
   
-  const { data: profile } = await supabase
+  // ✅ Force fresh fetch with no caching
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single()
   
-  return profile?.role || null
+  if (error) {
+    console.error('Error fetching role:', error)
+    return null
+  }
+  
+  return profile?.role || 'member'
 }
 
 /**
