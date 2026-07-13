@@ -285,6 +285,7 @@ export default function DashboardScanClient() {
 	const [submitting, setSubmitting] = useState(false);
 	const [showScanner, setShowScanner] = useState(false);
 	const [isScanning, setIsScanning] = useState(false);
+	const [cameraError, setCameraError] = useState<string | null>(null);
 	const scannerRef = useRef<Html5Qrcode | null>(null);
 	const scannerContainerId = "qr-scanner-container";
 	const router = useRouter();
@@ -327,40 +328,117 @@ export default function DashboardScanClient() {
 		};
 	}, []);
 
+	// Check camera permission before starting
+	const checkCameraPermission = async (): Promise<boolean> => {
+		try {
+			// Check if getUserMedia is supported
+			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+				setCameraError("Camera not supported on this device");
+				return false;
+			}
+
+			// Request camera permission explicitly
+			const stream = await navigator.mediaDevices.getUserMedia({ 
+				video: { facingMode: "environment" } 
+			});
+			
+			// Stop the stream immediately (we just wanted permission)
+			stream.getTracks().forEach(track => track.stop());
+			return true;
+		} catch (err: any) {
+			console.error("Camera permission error:", err);
+			
+			if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+				setCameraError("Camera access denied. Please allow camera access in your browser settings.");
+			} else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+				setCameraError("No camera found on this device.");
+			} else {
+				setCameraError("Unable to access camera: " + (err.message || "Unknown error"));
+			}
+			return false;
+		}
+	};
+
 	const startScanner = async () => {
 		try {
 			setIsScanning(true);
 			setError(null);
-			
+			setCameraError(null);
+
+			// Check camera permission first
+			const hasPermission = await checkCameraPermission();
+			if (!hasPermission) {
+				setIsScanning(false);
+				return;
+			}
+
+			// Ensure container exists and has proper dimensions
+			const container = document.getElementById(scannerContainerId);
+			if (!container) {
+				setCameraError("Scanner container not found");
+				setIsScanning(false);
+				return;
+			}
+
 			scannerRef.current = new Html5Qrcode(scannerContainerId);
 			
 			const config = {
-				fps: 10,
+				fps: 15,
 				qrbox: { width: 250, height: 250 },
 				aspectRatio: 1.0,
+				experimentalFeatures: {
+					useBarCodeDetectorIfSupported: true,
+				},
 			};
 
-			await scannerRef.current.start(
-				{ facingMode: "environment" },
-				config,
-				(decodedText) => {
-					handleScanSuccess(decodedText);
-				},
-				(errorMessage) => {
-					if (errorMessage.includes("No QR code found")) {
-						return;
+			// Try with facingMode: "environment" first, fallback to "user" if fails
+			try {
+				await scannerRef.current.start(
+					{ facingMode: "environment" },
+					config,
+					(decodedText) => {
+						handleScanSuccess(decodedText);
+					},
+					(errorMessage) => {
+						if (errorMessage.includes("No QR code found")) {
+							return;
+						}
+						console.debug("QR Scan error:", errorMessage);
 					}
-					console.debug("QR Scan error:", errorMessage);
+				);
+				setIsScanning(true);
+			} catch (startError: any) {
+				console.error("Error starting scanner with environment camera:", startError);
+				// Try with default camera
+				try {
+					await scannerRef.current.start(
+						{ facingMode: "user" },
+						config,
+						(decodedText) => {
+							handleScanSuccess(decodedText);
+						},
+						(errorMessage) => {
+							if (errorMessage.includes("No QR code found")) {
+								return;
+							}
+							console.debug("QR Scan error:", errorMessage);
+						}
+					);
+					setIsScanning(true);
+				} catch (fallbackError: any) {
+					console.error("Error starting scanner with fallback camera:", fallbackError);
+					setCameraError("Unable to access camera. Please try refreshing the page.");
+					setIsScanning(false);
 				}
-			);
+			}
 		} catch (err: any) {
 			console.error("Scanner initialization error:", err);
-			setError("Failed to start camera. Please check permissions.");
+			setCameraError("Failed to start camera. Please check permissions.");
 			setIsScanning(false);
 		}
 	};
 
-	const stopScanner = async () => {
+	const stopScanner = () => {
 		if (scannerRef.current) {
 			try {
 				scannerRef.current.stop();
@@ -374,7 +452,7 @@ export default function DashboardScanClient() {
 	};
 
 	const handleScanSuccess = async (decodedText: string) => {
-		await stopScanner();
+		stopScanner();
 		
 		let token = decodedText.trim();
 		if (decodedText.includes("/scan/")) {
@@ -520,6 +598,23 @@ export default function DashboardScanClient() {
 					</div>
 				)}
 
+				{cameraError && (
+					<div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg mb-4">
+						<p className="font-medium">📷 Camera Issue</p>
+						<p className="text-sm mt-1">{cameraError}</p>
+						<button
+							onClick={() => {
+								setCameraError(null);
+								setShowScanner(false);
+								setIsScanning(false);
+							}}
+							className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+						>
+							Close Scanner
+						</button>
+					</div>
+				)}
+
 				<div className="bg-white rounded-lg shadow-md p-6">
 					{location ? (
 						<div>
@@ -559,8 +654,15 @@ export default function DashboardScanClient() {
 													Scanning...
 												</span>
 											)}
+											{!isScanning && !cameraError && (
+												<span className="text-gray-600 text-sm">Starting camera...</span>
+											)}
 											<button
-												onClick={stopScanner}
+												onClick={() => {
+													stopScanner();
+													setShowScanner(false);
+													setCameraError(null);
+												}}
 												className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
 											>
 												Close Scanner
