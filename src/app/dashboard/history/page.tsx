@@ -5,6 +5,31 @@ import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
+// Helper to format date in Philippine Time
+function formatPhilippineTime(date: Date): string {
+  return new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date)
+}
+
+// Helper to format date for display (shorter version)
+function formatShortPhilippineTime(date: Date): string {
+  return new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date)
+}
+
 export default async function AttendanceHistoryPage() {
   const user = await getCurrentUser()
   
@@ -14,7 +39,6 @@ export default async function AttendanceHistoryPage() {
 
   const supabase = await createClient()
 
-  // Fetch user's attendance records with event details
   const { data: records, error } = await supabase
     .from('attendance_records')
     .select(`
@@ -83,12 +107,20 @@ export default async function AttendanceHistoryPage() {
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
                   <div>
                     <span className="font-medium">Scanned:</span>{' '}
-                    {new Date(record.scan_time).toLocaleString()}
+                    {formatPhilippineTime(new Date(record.scan_time))}
                   </div>
                   <div>
                     <span className="font-medium">Trust Score:</span>{' '}
                     {record.trust_score || 'N/A'}
                   </div>
+                </div>
+
+                {/* Optional: Show time difference */}
+                <div className="mt-2 text-xs text-gray-400">
+                  {new Date(record.scan_time).toLocaleDateString('en-PH', {
+                    timeZone: 'Asia/Manila',
+                    weekday: 'long',
+                  })}
                 </div>
               </div>
             ))}
