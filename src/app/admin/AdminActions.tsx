@@ -1,17 +1,33 @@
-"use client";
+'use client'
 
-import { useRouter } from "next/navigation";
+import { useState } from 'react'
+import CreateEventModal from '@/components/CreateEventModal'
 
 interface AdminActionsProps {
-	children?: React.ReactNode;
+  children?: React.ReactNode
 }
 
 export default function AdminActions({ children }: AdminActionsProps) {
-	const router = useRouter();
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
-	const handleNavigate = (path: string) => {
-		router.push(path);
-	};
+  return (
+    <>
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
+      >
+        <span className="text-xl">🎫</span> Create New Event
+      </button>
 
-	return <>{children}</>;
+      <CreateEventModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          // Handle success
+        }}
+      />
+
+      {children}
+    </>
+  )
 }
