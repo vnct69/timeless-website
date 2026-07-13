@@ -7,14 +7,9 @@ import { createClient } from '@/lib/supabase/client'
 interface DeleteEventButtonProps {
   eventId: string
   eventTitle: string
-  onDelete?: () => void
 }
 
-export default function DeleteEventButton({ 
-  eventId, 
-  eventTitle, 
-  onDelete 
-}: DeleteEventButtonProps) {
+export default function DeleteEventButton({ eventId, eventTitle }: DeleteEventButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -34,8 +29,15 @@ export default function DeleteEventButton({
 
       if (error) throw error
 
+      // ✅ Refresh the page to show updated list
       router.refresh()
-      onDelete?.()
+      
+      // ✅ Also force a hard refresh of the data
+      // (router.refresh() should be enough, but this is a fallback)
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
+      
     } catch (error) {
       console.error('Error deleting event:', error)
       alert('Failed to delete event. Please try again.')
@@ -48,7 +50,7 @@ export default function DeleteEventButton({
     <button
       onClick={handleDelete}
       disabled={isDeleting}
-      className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+      className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {isDeleting ? 'Deleting...' : 'Delete'}
     </button>
