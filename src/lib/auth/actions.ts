@@ -89,7 +89,7 @@ export async function getCurrentUser() {
 }
 
 // /**
-//  * Get user role from profiles table
+//  * Get user role from profiles table - Force fresh fetch
 //  */
 // export async function getUserRole(): Promise<string | null> {
 //   const supabase = await createClient()
@@ -97,37 +97,44 @@ export async function getCurrentUser() {
   
 //   if (!user) return null
   
-//   const { data: profile } = await supabase
+//   // ✅ Force fresh fetch with no caching
+//   const { data: profile, error } = await supabase
 //     .from('profiles')
 //     .select('role')
 //     .eq('id', user.id)
 //     .single()
   
-//   return profile?.role || null
+//   if (error) {
+//     console.error('Error fetching role:', error)
+//     return null
+//   }
+  
+//   return profile?.role
 // }
 
-
-/**
- * Get user role from profiles table - Force fresh fetch
- */
 export async function getUserRole(): Promise<string | null> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
-  if (!user) return null
+  if (!user) {
+    console.log('🔴 Debug: No authenticated user found.')
+    return null
+  }
   
-  // ✅ Force fresh fetch with no caching
+  console.log(`🔍 Debug: Querying profile for Auth UID: ${user.id}`)
+
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('role')
+    .select('*') // temporarily fetch all columns to inspect the object
     .eq('id', user.id)
     .single()
   
   if (error) {
-    console.error('Error fetching role:', error)
+    console.error('🔴 Debug: Error fetching profile:', error.message, error.details)
     return null
   }
   
+  console.log('🍏 Debug: Profile database record successfully fetched:', profile)
   return profile?.role || 'member'
 }
 
